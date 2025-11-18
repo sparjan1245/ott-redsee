@@ -129,11 +129,14 @@
 
 3. **Test API**
    ```bash
+   # Root endpoint
+   curl https://your-app.onrender.com/
+   
    # Health check
-   curl https://your-app.onrender.com/health
+   curl https://your-app.onrender.com/api/v1/health
    
    # Test login
-   curl -X POST https://your-app.onrender.com/api/admin/auth/login \
+   curl -X POST https://your-app.onrender.com/api/v1/admin/auth/login \
      -H "Content-Type: application/json" \
      -d '{"email":"admin@redsee.com","password":"YourPassword"}'
    ```

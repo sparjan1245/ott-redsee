@@ -74,9 +74,31 @@ app.use('/api/v1/', limiter);
 // API Documentation
 app.use('/api/v1/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'RedSee OTT Platform API',
+    version: '1.0.0',
+    documentation: `${req.protocol}://${req.get('host')}/api/v1/api-docs`,
+    endpoints: {
+      admin: `${req.protocol}://${req.get('host')}/api/v1/admin`,
+      user: `${req.protocol}://${req.get('host')}/api/v1/user`,
+      health: `${req.protocol}://${req.get('host')}/api/v1/health`
+    },
+    status: 'running'
+  });
+});
+
 // Health Check
 app.get('/api/v1/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    success: true,
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Routes
