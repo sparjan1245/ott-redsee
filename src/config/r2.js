@@ -14,7 +14,7 @@ const s3 = new S3Client({
 });
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME;
-const PUBLIC_URL = process.env.R2_PUBLIC_URL;
+const PUBLIC_URL = process.env.R2_ENDPOINT;
 
 // Validate R2 configuration
 const requiredR2Vars = {
