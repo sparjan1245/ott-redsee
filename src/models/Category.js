@@ -18,7 +18,7 @@ const categorySchema = new mongoose.Schema({
     type: String
   },
   icon: {
-    type: String // R2 URL or icon class
+    type: String 
   },
   isActive: {
     type: Boolean,

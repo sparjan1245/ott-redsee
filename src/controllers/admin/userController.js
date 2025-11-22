@@ -6,21 +6,25 @@ const getUsers = async (req, res, next) => {
     const { page = 1, limit = 20, search, isActive, isBanned } = req.query;
     const query = {};
 
+    // Search by email or phone
     if (search) {
       query.$or = [
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } }
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } }
       ];
     }
 
+    // Active filter
     if (isActive !== undefined) {
-      query.isActive = isActive === 'true';
+      query.isActive = isActive === "true";
     }
 
+    // Banned filter
     if (isBanned !== undefined) {
-      query.isBanned = isBanned === 'true';
+      query.isBanned = isBanned === "true";
     }
 
+    // Fetch paginated users
     const users = await User.find(query)
       .select('-password -refreshTokens')
       .populate('subscription')
@@ -28,6 +32,7 @@ const getUsers = async (req, res, next) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Total count
     const total = await User.countDocuments(query);
 
     res.json({
@@ -41,7 +46,7 @@ const getUsers = async (req, res, next) => {
       }
     });
   } catch (error) {
-    logger.error('Get users error:', error);
+    logger.error("Get users error:", error);
     next(error);
   }
 };

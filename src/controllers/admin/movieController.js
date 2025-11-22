@@ -73,17 +73,20 @@ const getMovies = async (req, res, next) => {
     const { page = 1, limit = 20, search, isActive } = req.query;
     const query = {};
 
+    // Search by title or description
     if (search) {
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
       ];
     }
 
+    // Active filter
     if (isActive !== undefined) {
-      query.isActive = isActive === 'true';
+      query.isActive = isActive === "true";
     }
 
+    // Fetch paginated movies
     const movies = await Movie.find(query)
       .populate('genres')
       .populate('languageId')
@@ -92,6 +95,7 @@ const getMovies = async (req, res, next) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Total count
     const total = await Movie.countDocuments(query);
 
     res.json({
@@ -105,7 +109,7 @@ const getMovies = async (req, res, next) => {
       }
     });
   } catch (error) {
-    logger.error('Get movies error:', error);
+    logger.error("Get movies error:", error);
     next(error);
   }
 };
@@ -216,9 +220,9 @@ const deleteMovie = async (req, res, next) => {
  */
 const getVideoUploadUrl = async (req, res, next) => {
   try {
-    const { movieId, quality } = req.body;
-    const key = getVideoPath('movie', movieId, quality);
-    const url = await getSignedUploadUrl(key, 'application/vnd.apple.mpegurl', 3600);
+    const { movieId } = req.body;
+    const key = getVideoPath('movie', movieId);
+    const url = await getSignedUploadUrl(key, 'video/mp4', 3600);
 
     res.json({
       success: true,
@@ -230,12 +234,59 @@ const getVideoUploadUrl = async (req, res, next) => {
   }
 };
 
+const toggleActive = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'isActive must be a boolean value (true or false)'
+      });
+    }
+
+    const movie = await Movie.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true, runValidators: true }
+    )
+      .populate('genres')
+      .populate('languageId')
+      .populate('cast.castId');
+
+    if (!movie) {
+      return res.status(404).json({
+        success: false,
+        message: 'Movie not found'
+      });
+    }
+
+    // Update search index
+    await SearchIndex.findOneAndUpdate(
+      { contentId: movie._id, contentType: 'Movie' },
+      { isActive: movie.isActive },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: `Movie ${isActive ? 'activated' : 'deactivated'} successfully`,
+      data: MovieResponseTransformer.transformSingle(movie)
+    });
+  } catch (error) {
+    logger.error('Toggle movie active status error:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   createMovie,
   getMovies,
   getMovieById,
   updateMovie,
   deleteMovie,
-  getVideoUploadUrl
+  getVideoUploadUrl,
+  toggleActive
 };
 

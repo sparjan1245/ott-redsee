@@ -14,13 +14,15 @@ const s3 = new S3Client({
 });
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME;
-const PUBLIC_URL = process.env.R2_ENDPOINT;
-
+const PUBLIC_URL = process.env.R2_PUBLIC_URL;
+const ENDPOINT = process.env.R2_ENDPOINT;
+console.log("PUBLIC_URL",PUBLIC_URL);
+console.log("ENDPOINT",ENDPOINT);
 // Validate R2 configuration
 const requiredR2Vars = {
   R2_BUCKET_NAME: BUCKET_NAME,
   R2_PUBLIC_URL: PUBLIC_URL,
-  R2_ENDPOINT: process.env.R2_ENDPOINT,
+  R2_ENDPOINT: ENDPOINT,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY
 };
@@ -132,16 +134,26 @@ const deleteFromR2 = async (key) => {
  * Generate R2 path for video content
  * @param {string} type - 'movie' or 'episode'
  * @param {string} contentId - Content ID
- * @param {string} quality - Quality level (240p, 360p, etc.)
+ * @param {string} quality - Quality level (optional, for backward compatibility)
  * @param {string} seasonId - Season ID (for episodes)
  * @param {string} episodeId - Episode ID (for episodes)
  * @returns {string} R2 key path
  */
-const getVideoPath = (type, contentId, quality, seasonId = null, episodeId = null) => {
+const getVideoPath = (type, contentId, quality = null, seasonId = null, episodeId = null) => {
   if (type === 'movie') {
-    return `movies/${contentId}/${quality}/index.m3u8`;
+    // If quality is provided, use old path structure (for backward compatibility)
+    // Otherwise, use simple single video path
+    if (quality) {
+      return `movies/${contentId}/${quality}/index.m3u8`;
+    }
+    return `movies/${contentId}/video.mp4`;
   } else if (type === 'episode') {
-    return `series/${contentId}/${seasonId}/${episodeId}/${quality}/index.m3u8`;
+    // If quality is provided, use old path structure (for backward compatibility)
+    // Otherwise, use simple single video path
+    if (quality) {
+      return `series/${contentId}/${seasonId}/${episodeId}/${quality}/index.m3u8`;
+    }
+    return `series/${contentId}/${seasonId}/${episodeId}/video.mp4`;
   }
   throw new Error('Invalid video type');
 };
