@@ -4,23 +4,35 @@ const logger = require('../../utils/logger');
 
 const getOrders = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, status, paymentMethod, startDate, endDate } = req.query;
+    const { page = 1, limit = 20, search, status, paymentMethod, startDate, endDate } = req.query;
     const query = {};
 
+    // Search by order ID or user email
+    if (search) {
+      query.$or = [
+        { orderId: { $regex: search, $options: "i" } },
+        { 'user.email': { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // Status filter
     if (status) {
       query.status = status;
     }
 
+    // Payment method filter
     if (paymentMethod) {
       query.paymentMethod = paymentMethod;
     }
 
+    // Date range filter
     if (startDate || endDate) {
       query.createdAt = {};
       if (startDate) query.createdAt.$gte = new Date(startDate);
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
 
+    // Fetch paginated orders
     const orders = await Payment.find(query)
       .populate('user', 'email phone')
       .populate('plan')
@@ -29,6 +41,7 @@ const getOrders = async (req, res, next) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Total count
     const total = await Payment.countDocuments(query);
 
     res.json({
@@ -42,7 +55,7 @@ const getOrders = async (req, res, next) => {
       }
     });
   } catch (error) {
-    logger.error('Get orders error:', error);
+    logger.error("Get orders error:", error);
     next(error);
   }
 };
@@ -66,20 +79,30 @@ const getOrderById = async (req, res, next) => {
       data: order
     });
   } catch (error) {
-    logger.error('Get order by ID error:', error);
+    logger.error("Get order by ID error:", error);
     next(error);
   }
 };
 
 const getPayments = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 20, search, status } = req.query;
     const query = {};
 
+    // Search by payment ID or user email
+    if (search) {
+      query.$or = [
+        { paymentId: { $regex: search, $options: "i" } },
+        { 'user.email': { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // Status filter
     if (status) {
       query.status = status;
     }
 
+    // Fetch paginated payments
     const payments = await Payment.find(query)
       .populate('user', 'email phone')
       .populate('plan')
@@ -87,6 +110,7 @@ const getPayments = async (req, res, next) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Total count
     const total = await Payment.countDocuments(query);
 
     // Calculate summary
@@ -125,7 +149,7 @@ const getPayments = async (req, res, next) => {
       }
     });
   } catch (error) {
-    logger.error('Get payments error:', error);
+    logger.error("Get payments error:", error);
     next(error);
   }
 };

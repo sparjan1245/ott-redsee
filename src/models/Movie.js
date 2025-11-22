@@ -49,13 +49,9 @@ const movieSchema = new mongoose.Schema({
   trailer: {
     type: String // YouTube/Vimeo URL
   },
-  videoQualities: {
-    '240p': { type: String }, // R2 path
-    '360p': { type: String },
-    '480p': { type: String },
-    '720p': { type: String },
-    '1080p': { type: String },
-    '4K': { type: String }
+  video: {
+    type: String, // R2 URL - Single video file
+    required: true
   },
   subtitles: [{
     language: String,

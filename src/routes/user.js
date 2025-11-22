@@ -11,61 +11,78 @@ const watchHistoryController = require('../controllers/user/watchHistoryControll
 const searchController = require('../controllers/user/searchController');
 const deviceController = require('../controllers/user/deviceController');
 
-// User Auth Routes
 router.post('/auth/signup', userAuthController.signup);
 router.post('/auth/login', userAuthController.login);
 router.post('/auth/refresh', userAuthController.refreshToken);
 router.post('/auth/logout', authenticateUser, userAuthController.logout);
 
-// Profile Routes
 router.post('/profiles', authenticateUser, userAuthController.createProfile);
 router.get('/profiles', authenticateUser, userAuthController.getProfiles);
 router.put('/profiles/:id', authenticateUser, userAuthController.updateProfile);
 router.delete('/profiles/:id', authenticateUser, userAuthController.deleteProfile);
 router.put('/profiles/:id/switch', authenticateUser, userAuthController.switchProfile);
 
-// Content Routes
+
+router.get('/homepage', contentController.getHomepage);
+router.get('/trending', contentController.getTrending);
+router.get('/popular', contentController.getPopular);
+router.get('/recently-added', contentController.getRecentlyAdded);
+router.get('/upcoming', contentController.getUpcoming);
+router.get('/kids', contentController.getKidsContent);
+
 router.get('/movies', contentController.getMovies);
-router.get('/movies/:id', contentController.getMovieById);
 router.get('/series', contentController.getSeries);
+router.get('/genres', contentController.getGenres);
+router.get('/languages', contentController.getLanguages);
+
+// Content Details
+router.get('/movies/:id', contentController.getMovieById);
 router.get('/series/:id', contentController.getSeriesById);
 router.get('/series/:id/seasons', contentController.getSeasons);
 router.get('/episodes/:id', contentController.getEpisodeById);
-router.get('/homepage', contentController.getHomepage);
+router.get('/cast/:id', contentController.getCastDetails);
 
-// Streaming Routes
+// Content Discovery
+router.get('/content/related', contentController.getRelatedContent);
+router.get('/content/by-cast', contentController.getContentByCast);
+router.get('/content/by-language', contentController.getContentByLanguage);
+
+// Search
+router.get('/search', searchController.search);
+
+// ==================== AUTHENTICATED CONTENT ROUTES ====================
+// Recommendations (Personalized)
+router.get('/recommendations', authenticateUser, contentController.getRecommendations);
+
+// ==================== STREAMING ROUTES ====================
+router.get('/stream/qualities', authenticateUser, streamingController.getAvailableQualities);
 router.get('/stream/movie/:id', authenticateUser, streamingController.getMovieStream);
 router.get('/stream/episode/:id', authenticateUser, streamingController.getEpisodeStream);
 router.get('/stream/subtitle/:id', authenticateUser, streamingController.getSubtitle);
+router.get('/stream/playback-position', authenticateUser, streamingController.getPlaybackPosition);
+router.post('/stream/playback-position', authenticateUser, streamingController.updatePlaybackPosition);
 
-// Watch History Routes
+// ==================== WATCH HISTORY ROUTES ====================
 router.get('/watch-history', authenticateUser, watchHistoryController.getWatchHistory);
 router.post('/watch-history', authenticateUser, watchHistoryController.updateWatchHistory);
 router.delete('/watch-history/:id', authenticateUser, watchHistoryController.deleteWatchHistory);
 router.get('/watch-history/continue-watching', authenticateUser, watchHistoryController.getContinueWatching);
 
-// Watchlist Routes
+// ==================== WATCHLIST ROUTES ====================
 router.get('/watchlist', authenticateUser, watchlistController.getWatchlist);
 router.post('/watchlist', authenticateUser, watchlistController.addToWatchlist);
 router.delete('/watchlist/:id', authenticateUser, watchlistController.removeFromWatchlist);
 
-// Subscription Routes
+// ==================== SUBSCRIPTION ROUTES ====================
 router.get('/subscription', authenticateUser, subscriptionController.getSubscription);
 router.post('/subscription/subscribe', authenticateUser, subscriptionController.subscribe);
 router.post('/subscription/cancel', authenticateUser, subscriptionController.cancelSubscription);
 
-// Payment Routes
+// ==================== PAYMENT ROUTES ====================
 router.post('/payment/create-order', authenticateUser, subscriptionController.createPaymentOrder);
 router.post('/payment/verify', authenticateUser, subscriptionController.verifyPayment);
 
-// Search Routes
-router.get('/search', searchController.search);
-
-// Public Content Routes
-router.get('/genres', contentController.getGenres);
-router.get('/languages', contentController.getLanguages);
-
-// Device Routes
+// ==================== DEVICE ROUTES ====================
 router.get('/devices', authenticateUser, deviceController.getDevices);
 router.post('/devices/register', authenticateUser, deviceController.registerDevice);
 router.delete('/devices/:deviceId', authenticateUser, deviceController.removeDevice);

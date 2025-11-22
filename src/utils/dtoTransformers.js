@@ -39,9 +39,9 @@ class DTOTransformers {
       updatedAt: movie.updatedAt
     };
 
-    // Include video URLs only if explicitly requested (for streaming endpoints)
-    if (includeVideoUrls && movie.videoQualities) {
-      transformed.videoQualities = movie.videoQualities;
+    // Include video URL only if explicitly requested (for streaming endpoints)
+    if (includeVideoUrls && movie.video) {
+      transformed.video = movie.video;
     }
 
     // Include internal fields only for admin
@@ -165,9 +165,9 @@ class DTOTransformers {
       updatedAt: episode.updatedAt
     };
 
-    // Include video URLs only if explicitly requested
-    if (includeVideoUrls && episode.videoQualities) {
-      transformed.videoQualities = episode.videoQualities;
+    // Include video URL only if explicitly requested
+    if (includeVideoUrls && episode.video) {
+      transformed.video = episode.video;
     }
 
     return transformed;

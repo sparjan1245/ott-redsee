@@ -127,14 +127,15 @@ const getSubtitleUploadUrl = async (req, res, next) => {
 
 /**
  * Get signed URL for uploading HLS manifest (after encoding)
+ * Note: quality is optional - if not provided, uses single video path
  */
 const getHLSManifestUploadUrl = async (req, res, next) => {
   try {
-    const { contentType, contentId, quality, seasonId, episodeId } = req.body;
+    const { contentType, contentId, quality = null, seasonId, episodeId } = req.body;
     
     if (contentType === 'movie') {
       const key = getVideoPath('movie', contentId, quality);
-      const url = await getSignedUploadUrl(key, 'application/vnd.apple.mpegurl', 3600);
+      const url = await getSignedUploadUrl(key, quality ? 'application/vnd.apple.mpegurl' : 'video/mp4', 3600);
       
       res.json({
         success: true,
@@ -142,7 +143,7 @@ const getHLSManifestUploadUrl = async (req, res, next) => {
           uploadUrl: url,
           key,
           publicUrl: `${PUBLIC_URL}/${key}`,
-          note: 'Upload the master.m3u8 file here'
+          note: quality ? 'Upload the master.m3u8 file here' : 'Upload the video file here'
         }
       });
     } else if (contentType === 'episode') {
@@ -154,7 +155,7 @@ const getHLSManifestUploadUrl = async (req, res, next) => {
       }
       
       const key = getVideoPath('episode', contentId, quality, seasonId, episodeId);
-      const url = await getSignedUploadUrl(key, 'application/vnd.apple.mpegurl', 3600);
+      const url = await getSignedUploadUrl(key, quality ? 'application/vnd.apple.mpegurl' : 'video/mp4', 3600);
       
       res.json({
         success: true,
@@ -162,7 +163,7 @@ const getHLSManifestUploadUrl = async (req, res, next) => {
           uploadUrl: url,
           key,
           publicUrl: `${PUBLIC_URL}/${key}`,
-          note: 'Upload the master.m3u8 file here'
+          note: quality ? 'Upload the master.m3u8 file here' : 'Upload the video file here'
         }
       });
     } else {
@@ -179,10 +180,19 @@ const getHLSManifestUploadUrl = async (req, res, next) => {
 
 /**
  * Get signed URL for uploading HLS segment (.ts files)
+ * Note: quality is optional - if not provided, this function may not be applicable
  */
 const getHLSSegmentUploadUrl = async (req, res, next) => {
   try {
-    const { contentType, contentId, quality, segmentName, seasonId, episodeId } = req.body;
+    const { contentType, contentId, quality = null, segmentName, seasonId, episodeId } = req.body;
+    
+    // HLS segments only make sense with quality-based paths
+    if (!quality) {
+      return res.status(400).json({
+        success: false,
+        message: 'Quality is required for HLS segment uploads. Use getVideoUploadUrl for single video files.'
+      });
+    }
     
     let baseKey;
     if (contentType === 'movie') {
@@ -255,11 +265,11 @@ const getBulkUploadUrls = async (req, res, next) => {
           break;
         case 'hls-manifest':
           if (file.contentType === 'movie') {
-            key = getVideoPath('movie', file.contentId, file.quality);
+            key = getVideoPath('movie', file.contentId, file.quality || null);
           } else {
-            key = getVideoPath('episode', file.contentId, file.quality, file.seasonId, file.episodeId);
+            key = getVideoPath('episode', file.contentId, file.quality || null, file.seasonId, file.episodeId);
           }
-          contentType = 'application/vnd.apple.mpegurl';
+          contentType = file.quality ? 'application/vnd.apple.mpegurl' : 'video/mp4';
           break;
         default:
           continue;

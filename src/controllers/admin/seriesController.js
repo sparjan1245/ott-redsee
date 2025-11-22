@@ -45,23 +45,27 @@ const getSeries = async (req, res, next) => {
     const { page = 1, limit = 20, search, isActive } = req.query;
     const query = {};
 
+    // Search by title or description
     if (search) {
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
       ];
     }
 
+    // Active filter
     if (isActive !== undefined) {
-      query.isActive = isActive === 'true';
+      query.isActive = isActive === "true";
     }
 
+    // Fetch paginated series
     const series = await Series.find(query)
       .populate('genres')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Total count
     const total = await Series.countDocuments(query);
 
     res.json({
@@ -75,7 +79,7 @@ const getSeries = async (req, res, next) => {
       }
     });
   } catch (error) {
-    logger.error('Get series error:', error);
+    logger.error("Get series error:", error);
     next(error);
   }
 };
@@ -370,12 +374,59 @@ const deleteEpisode = async (req, res, next) => {
   }
 };
 
+const toggleActive = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'isActive must be a boolean value (true or false)'
+      });
+    }
+
+    const series = await Series.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true, runValidators: true }
+    )
+      .populate('genres')
+      .populate('languageId')
+      .populate('cast.castId');
+
+    if (!series) {
+      return res.status(404).json({
+        success: false,
+        message: 'Series not found'
+      });
+    }
+
+    // Update search index
+    await SearchIndex.findOneAndUpdate(
+      { contentId: series._id, contentType: 'Series' },
+      { isActive: series.isActive },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: `Series ${isActive ? 'activated' : 'deactivated'} successfully`,
+      data: series
+    });
+  } catch (error) {
+    logger.error('Toggle series active status error:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   createSeries,
   getSeries,
   getSeriesById,
   updateSeries,
   deleteSeries,
+  toggleActive,
   createSeason,
   getSeasons,
   updateSeason,
